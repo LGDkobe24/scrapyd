@@ -1,3 +1,4 @@
+# -*- coding: gb2312 -*-
 from datetime import datetime
 
 import socket
@@ -29,6 +30,7 @@ class Root(resource.Resource):
             self.putChild('items', static.File(itemsdir, 'text/plain'))
         self.putChild('jobs', Jobs(self, local_items))
         services = config.items('services', ())
+        # print services
         for servName, servClsName in services:
           servCls = load_object(servClsName)
           self.putChild(servName, servCls(self))
@@ -69,29 +71,48 @@ class Home(resource.Resource):
         }
         s = """
 <html>
-<head><title>Scrapyd</title></head>
+<head><title>ScrapyÅÀ³æ·þÎñÆ÷</title></head>
 <body>
-<h1>Scrapyd</h1>
-<p>Available projects: <b>%(projects)s</b></p>
+<h1>ScrapyÅÀ³æ·þÎñÆ÷</h1>
+<p>¿ÉÓÃµÄÏîÄ¿: <b>%(projects)s</b></p>
 <ul>
-<li><a href="/jobs">Jobs</a></li>
+<li><a href="/jobs">×¥È¡¹¤×÷</a></li>
 """ % vars
         if self.local_items:
-            s += '<li><a href="/items/">Items</a></li>'
+            s += '<li><a href="/items/">×¥È¡ÎïÆ·</a></li>'
         s += """
-<li><a href="/logs/">Logs</a></li>
-<li><a href="http://scrapyd.readthedocs.org/en/latest/">Documentation</a></li>
+<li><a href="/logs/">×¥È¡ÈÕÖ¾</a></li>
+
 </ul>
 
-<h2>How to schedule a spider?</h2>
+<h4>Êý¾Ý×¥È¡¹æ»®APIÑùÀý</h4>
 
-<p>To schedule a spider you need to use the API (this web UI is only for
-monitoring)</p>
+<p>ÐèÒªÊ¹ÓÃ<a href="http://curl.haxx.se/">curl</a>:</p>
+<p><code>curl http://localhost:6800/schedule.json -d project=myproject -d spider=somespider -d setting=DOWNLOAD_DELAY=2 -d arg1=val1</code></p>
 
-<p>Example using <a href="http://curl.haxx.se/">curl</a>:</p>
-<p><code>curl http://localhost:6800/schedule.json -d project=default -d spider=somespider</code></p>
+<p><code> curl http://localhost:6800/cancel.json -d project=myproject -d job=6487ec79947edab326d6db28a2d86511e8247444 </code></p>
 
-<p>For more information about the API, see the <a href="http://scrapyd.readthedocs.org/en/latest/">Scrapyd documentation</a></p>
+<p><code> curl http://localhost:6800/listprojects.json </code></p>
+<p><code>  curl http://localhost:6800/listversions.json?project=myproject </code></p>
+<p><code> curl http://localhost:6800/spiderid.json?project=myproject </code></p>
+<p><code> curl http://localhost:6800/listspiders.json?project=myproject </code></p><p><code>  curl http://localhost:6800/listjobs.json?project=myproject </code></p>
+
+<p><code> curl http://localhost:6800/delproject.json -d project=myproject </code></p>
+
+
+<p><code> curl http://localhost:6800/delversion.json -d project=myproject -d version=r99 </code></p>
+
+<p>¸ü¶àµÄAPI£¬¿´¹Ù·½ÎÄµµ°É <a href="http://scrapyd.readthedocs.org/en/latest/">Scrapyd documentation</a></p>
+
+
+<p> [deploy:scrapyd2] <p>
+  <p>  url = http://scrapyd.mydomain.com/api/scrapyd/ <p>
+  <p>  username = john <p>
+  <p>  password = secret <p>
+  
+<p>ÉÏ´«ÅÀ³æµÄÃüÁî  scrapyd-deploy -l <p>
+
+<p>´î½¨£ºÉòÖ®Èñ<p>
 </body>
 </html>
 """ % vars
@@ -106,17 +127,17 @@ class Jobs(resource.Resource):
 
     def render(self, txrequest):
         cols = 6
-        s = "<html><head><title>Scrapyd</title></head>"
+        s = "<html><head><title>Scrapy·þÎñÆ÷</title></head>"
         s += "<body>"
-        s += "<h1>Jobs</h1>"
-        s += "<p><a href='..'>Go back</a></p>"
+        s += "<h1>×¥È¡¹¤×÷</h1>"
+        s += "<p><a href='..'>·µ»Ø</a></p>"
         s += "<table border='1'>"
-        s += "<tr><th>Project</th><th>Spider</th><th>Job</th><th>PID</th><th>Runtime</th><th>Log</th>"
+        s += "<tr><th>ÏîÄ¿</th><th>ÅÀ³æ</th><th>¹¤×÷</th><th>PID</th><th>ÔËÐÐÊ±¼ä</th><th>ÈÕÖ¾</th>"
         if self.local_items:
-            s += "<th>Items</th>"
+            s += "<th>ÏîÄ¿</th>"
             cols = 7
         s += "</tr>"
-        s += "<tr><th colspan='%s' style='background-color: #ddd'>Pending</th></tr>" % cols
+        s += "<tr><th colspan='%s' style='background-color: #ddd'>×¼±¸ÔËÐÐ</th></tr>" % cols
         for project, queue in self.root.poller.queues.items():
             for m in queue.list():
                 s += "<tr>"
@@ -124,7 +145,7 @@ class Jobs(resource.Resource):
                 s += "<td>%s</td>" % str(m['name'])
                 s += "<td>%s</td>" % str(m['_job'])
                 s += "</tr>"
-        s += "<tr><th colspan='%s' style='background-color: #ddd'>Running</th></tr>" % cols
+        s += "<tr><th colspan='%s' style='background-color: #ddd'>ÕýÔÚÔËÐÐ</th></tr>" % cols
         for p in self.root.launcher.processes.values():
             s += "<tr>"
             for a in ['project', 'spider', 'job', 'pid']:
@@ -134,16 +155,16 @@ class Jobs(resource.Resource):
             if self.local_items:
                 s += "<td><a href='/items/%s/%s/%s.jl'>Items</a></td>" % (p.project, p.spider, p.job)
             s += "</tr>"
-        s += "<tr><th colspan='%s' style='background-color: #ddd'>Finished</th></tr>" % cols
+        s += "<tr><th colspan='%s' style='background-color: #ddd'>Íê³ÉÔËÐÐ</th></tr>" % cols
         for p in self.root.launcher.finished:
             s += "<tr>"
             for a in ['project', 'spider', 'job']:
                 s += "<td>%s</td>" % getattr(p, a)
             s += "<td></td>"
             s += "<td>%s</td>" % (p.end_time - p.start_time)
-            s += "<td><a href='/logs/%s/%s/%s.log'>Log</a></td>" % (p.project, p.spider, p.job)
+            s += "<td><a href='/logs/%s/%s/%s.log'>×¥È¡ÈÕÖ¾</a></td>" % (p.project, p.spider, p.job)
             if self.local_items:
-                s += "<td><a href='/items/%s/%s/%s.jl'>Items</a></td>" % (p.project, p.spider, p.job)
+                s += "<td><a href='/items/%s/%s/%s.jl'>×¥È¡ÎïÆ·</a></td>" % (p.project, p.spider, p.job)
             s += "</tr>"
         s += "</table>"
         s += "</body>"
