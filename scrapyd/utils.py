@@ -115,3 +115,18 @@ def get_spider_list(project, runner=None, pythonpath=None):
     tmp = out.splitlines();
     get_spider_list.cache[project] = tmp
     return tmp
+
+def get_spider_last_id(path):
+
+    spiderlastid={}
+    for spider in os.listdir(path):
+        spiderpath = os.path.join(path,spider)
+        last_id = sort_log(spiderpath)[0][:-4]
+        spiderlastid[spider]=last_id
+    return spiderlastid
+
+def sort_log(path):
+
+    last_log=sorted([(x,os.path.getctime(os.path.join(path,x))) for x in os.listdir(path) if os.path.isfile(os.path.join(path,x))],
+        key=lambda i:i[1])[-1]
+    return last_log
