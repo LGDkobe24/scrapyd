@@ -1,10 +1,11 @@
 import traceback
 import uuid
+import os
 from cStringIO import StringIO
 
 from twisted.python import log
 
-from .utils import get_spider_list, JsonResource, UtilsCache
+from .utils import get_spider_list, JsonResource, UtilsCache, get_spider_last_id
 
 class WsResource(JsonResource):
 
@@ -36,8 +37,20 @@ class Schedule(WsResource):
         args['settings'] = settings
         jobid = uuid.uuid1().hex
         args['_job'] = jobid
+        # print args
         self.root.scheduler.schedule(project, spider, **args)
         return {"node_name": self.root.nodename, "status": "ok", "jobid": jobid}
+
+class SpiderId(WsResource):
+    def render_GET(self, txrequest):
+        spiderlastid={}
+        project = txrequest.args['project'][0]
+        logsdir = self.root.scheduler.config.get('logs_dir')
+        # print os.path.join(logsdir,project)
+        # print os.listdir(os.path.join(logsdir,project))
+        spiderlastid=get_spider_last_id(os.path.join(logsdir,project))
+        return {"node_name": self.root.nodename, "status": "ok", "spiderid": spiderlastid}
+        
 
 class Cancel(WsResource):
 
